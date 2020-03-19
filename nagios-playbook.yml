@@ -87,20 +87,9 @@
         path: /usr/local/nagios/etc/htpasswd.users # required. Path to the file that contains the usernames and passwords
         name: nagiosadmin # required. User name to add or remove
         password: nagiosadmin # not required. Password associated with user.,Must be specified if user does not exist yet.
-      tags:
-        - nagios
-    - name: start apache
-      service:
-        name: "{{ apache_package }}"
-        state: started
-        enabled: true
-      tags:
-        - nagios
-    - name: start nagios
-      service:
-        name: nagios
-        state: started
-        enabled: true
+      notify:
+        - start apache
+        - start nagios
       tags:
         - nagios
     - name: Download the plugin to temp folder
@@ -120,8 +109,26 @@
         cmd: sudo ./tools/setup > setup.log && sudo ./configure > configue.log && sudo make > make.log && sudo make install
       args:
         chdir: "/tmp/nagios-plugins-release-{{ nagios_plugin_version }}/"
+      notify:
+        - restart nagios
+        - restart apache
       tags:
         - plugin
+  handlers:
+    - name: start apache
+      service:
+        name: "{{ apache_package }}"
+        state: started
+        enabled: yes
+      tags:
+        - nagios
+    - name: start nagios
+      service:
+        name: nagios
+        state: started
+        enabled: yes
+      tags:
+        - nagios
     - name: restart nagios
       service:
         name: nagios
